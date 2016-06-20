@@ -74,9 +74,8 @@ int* get_cpu_utilization(int num_core){
 		// Compute the idle and NotIdle time
 		cpu_not_idle_prev = time_prev.user_time + time_prev.nice_time + time_prev.system_time + time_prev.irq_time + time_prev.softirq_time;
 		cpu_idle_prev = time_prev.idle_time + time_prev.iowait_time;
-		cpu_total_prev = cpu_idle_prev + cpu_not_idle_prev;
 #ifdef DEBUG
-		printf("PREV = NOT_IDLE:%u   -   IDLE:%u   -   NOT_IDLE+IDLE:%u\n",cpu_not_idle_prev,cpu_idle_prev,cpu_total_prev);
+		printf("PREV = NOT_IDLE:%u   -   IDLE:%u   -   NOT_IDLE+IDLE:%u\n",cpu_not_idle_prev,cpu_idle_prev,cpu_not_idle_prev+cpu_idle_prev);
 #endif
 
 		// Parse the ligne to fill the structure of time
@@ -84,19 +83,18 @@ int* get_cpu_utilization(int num_core){
 		// Compute the idle and NotIdle time
 		cpu_not_idle = time.user_time + time.nice_time + time.system_time + time.irq_time + time.softirq_time;
 		cpu_idle = time.idle_time + time.iowait_time;
-		cpu_total = cpu_idle + cpu_not_idle;
 
 #ifdef DEBUG
-		printf("ACTUAL = NOT_IDLE:%u   -   IDLE:%u   -   NOT_IDLE+IDLE:%u\n",cpu_not_idle,cpu_idle, cpu_total);
+		printf("ACTUAL = NOT_IDLE:%u   -   IDLE:%u   -   NOT_IDLE+IDLE:%u\n",cpu_not_idle,cpu_idle, cpu_not_idle+cpu_idle);
 #endif
-		// on peut alors faire la diff entre now and prev
-		total_not_idle = cpu_total - cpu_total_prev;
+		// we can compute the difference between the two screenshot : now and prev
+		total_not_idle = cpu_not_idle - cpu_not_idle_prev;
 		total_idle = cpu_idle - cpu_idle_prev;
 #ifdef DEBUG
 		printf("TOTAL = NOT_IDLE:%u   -   IDLE:%u\n",total_not_idle,total_idle);
 #endif
-		// So, utilization = total_not_idle - idle / total_not_idle 
-		u[core]= (total_not_idle - total_idle)*100 / total_not_idle ;
+		// So, utilization = 100*total_not_idle / (total_idle+total_not_idle)
+		u[core]= (total_not_idle*100) / (total_not_idle + total_idle) ;
 	}
 
 	for(i=0;i<num_core+1;++i){
