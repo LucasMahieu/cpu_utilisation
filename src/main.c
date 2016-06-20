@@ -12,7 +12,7 @@ int main(void){
 	int unit_value = sysconf(_SC_CLK_TCK);
 	printf("Unit value = 1/%dsec.\n",unit_value);
 	u = get_cpu_utilization(core_num);
-	printf("Utilization of All cpu=%d%%\n",u[i]);
+	printf("Utilization averaged = %d%%\n",u[i]);
 	for(i=1;i<core_num+1;++i){
 		printf("---> Utilization of cpu%d=%d%%\n",i-1,u[i]);
 	}
