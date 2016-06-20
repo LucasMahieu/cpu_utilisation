@@ -4,8 +4,8 @@
 #include <stdint.h>
 #include <string.h>
 
-#define MAX_SIZE_LINE 100
-#define SAMPLING_TIME_WAIT 2
+#define MAX_SIZE_LINE 120
+#define SAMPLING_TIME_WAIT 3
 
 typedef struct {
 	char cpu_num[5];
@@ -20,5 +20,5 @@ typedef struct {
 
 cpu_time get_cpu_time(char* line);
 
-int get_cpu_utilization(int num);
+int* get_cpu_utilization(int nb_core);
 

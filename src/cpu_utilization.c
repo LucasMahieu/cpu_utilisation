@@ -25,66 +25,87 @@ cpu_time get_cpu_time(char* line){
 	return ret;
 }
 
-int get_cpu_utilization(int num){
+int* get_cpu_utilization(int num_core){
 	static int cpu_idle=0;
 	static int cpu_idle_prev=0;
 	static int cpu_not_idle=0;
 	static int cpu_not_idle_prev=0;
 
-	char cpu_line[MAX_SIZE_LINE];
+	int i=0,core=0;
+	int* u = (int*)(calloc(num_core,sizeof(*u)));
+	char** cpu_line_prev = (char**)(calloc(num_core+1,sizeof(*cpu_line_prev)));
+	for(i=0;i<num_core+1;++i){
+		cpu_line_prev[i] = (char*)calloc(MAX_SIZE_LINE,sizeof(**cpu_line_prev));
+	}
+	char** cpu_line = (char**)(calloc(num_core+1,sizeof(*cpu_line)));
+	for(i=0;i<num_core+1;++i){
+		cpu_line[i] = (char*)calloc(MAX_SIZE_LINE,sizeof(**cpu_line));
+	}
 	cpu_time time_prev, time;
 	int total_not_idle=0, total_idle=0;
 	int cpu_total=0, cpu_total_prev=0;
-	int i=0;
 
 	// capture the /proc/stat ligne corresponding to CPU(num)
-	FILE* f = fopen("/proc/stat","r");
-	for(i=-1;i<num;++i){
-		if(fgets(cpu_line, MAX_SIZE_LINE, f) == NULL){
+	FILE* f_prev = fopen("/proc/stat","r");
+	for(i=0;i<num_core+1;++i){
+		if(fgets(cpu_line_prev[i], MAX_SIZE_LINE, f_prev) == NULL){
 			printf("Error to get line in /proc/stat");
-			return -1;
+			return NULL;
 		}
 	}
-	fclose(f);
-	// Parse the ligne to fill the structure of time
-	time_prev = get_cpu_time(cpu_line);
-	// Compute the idle and NotIdle time
-	cpu_not_idle_prev = time_prev.user_time + time_prev.nice_time + time_prev.system_time + time_prev.irq_time + time_prev.softirq_time;
-	cpu_idle_prev = time_prev.idle_time + time_prev.iowait_time;
-	cpu_total_prev = cpu_idle_prev + cpu_not_idle_prev;
-#ifdef DEBUG
-	printf("PREV = NOT_IDLE:%u   -   IDLE:%u   -   NOT_IDLE+IDLE:%u\n",cpu_not_idle_prev,cpu_idle_prev,cpu_total_prev);
-#endif
+	fclose(f_prev);
+
 	// Waiting SAMPLING_TIME_WAIT to make an other measure
 	sleep(SAMPLING_TIME_WAIT);
-
+	
 	// capture the /proc/stat ligne corresponding to CPU(num)
-	f = fopen("/proc/stat","r");
-	for(i=-1;i<num;++i){
-		if(fgets(cpu_line, MAX_SIZE_LINE, f) == NULL){
+	FILE* f = fopen("/proc/stat","r");
+	for(i=0;i<num_core+1;++i){
+		if(fgets(cpu_line[i], MAX_SIZE_LINE, f) == NULL){
 			printf("Error to get line in /proc/stat");
-			return -1;
+			return NULL;
 		}
 	}
 	fclose(f);
-	// Parse the ligne to fill the structure of time
-	time = get_cpu_time(cpu_line);
-	// Compute the idle and NotIdle time
-	cpu_not_idle = time.user_time + time.nice_time + time.system_time + time.irq_time + time.softirq_time;
-	cpu_idle = time.idle_time + time.iowait_time;
-	cpu_total = cpu_idle + cpu_not_idle;
 
+	for(core=0;core<num_core+1;++core){
+		// Parse the ligne to fill the structure of time
+		time_prev = get_cpu_time(cpu_line_prev[core]);
+		// Compute the idle and NotIdle time
+		cpu_not_idle_prev = time_prev.user_time + time_prev.nice_time + time_prev.system_time + time_prev.irq_time + time_prev.softirq_time;
+		cpu_idle_prev = time_prev.idle_time + time_prev.iowait_time;
+		cpu_total_prev = cpu_idle_prev + cpu_not_idle_prev;
 #ifdef DEBUG
-	printf("ACTUAL = NOT_IDLE:%u   -   IDLE:%u   -   NOT_IDLE+IDLE:%u\n",cpu_not_idle,cpu_idle, cpu_total);
-#endif
-	// on peut alors faire la diff entre now and prev
-	total_not_idle = cpu_total - cpu_total_prev;
-	total_idle = cpu_idle - cpu_idle_prev;
-#ifdef DEBUG
-	printf("TOTAL = NOT_IDLE:%u   -   IDLE:%u\n",total_not_idle,total_idle);
+		printf("PREV = NOT_IDLE:%u   -   IDLE:%u   -   NOT_IDLE+IDLE:%u\n",cpu_not_idle_prev,cpu_idle_prev,cpu_total_prev);
 #endif
 
-	// So, utilization = total_not_idle - idle / total_not_idle 
-	return (total_not_idle - total_idle) / total_not_idle;
+		// Parse the ligne to fill the structure of time
+		time = get_cpu_time(cpu_line[core]);
+		// Compute the idle and NotIdle time
+		cpu_not_idle = time.user_time + time.nice_time + time.system_time + time.irq_time + time.softirq_time;
+		cpu_idle = time.idle_time + time.iowait_time;
+		cpu_total = cpu_idle + cpu_not_idle;
+
+#ifdef DEBUG
+		printf("ACTUAL = NOT_IDLE:%u   -   IDLE:%u   -   NOT_IDLE+IDLE:%u\n",cpu_not_idle,cpu_idle, cpu_total);
+#endif
+		// on peut alors faire la diff entre now and prev
+		total_not_idle = cpu_total - cpu_total_prev;
+		total_idle = cpu_idle - cpu_idle_prev;
+#ifdef DEBUG
+		printf("TOTAL = NOT_IDLE:%u   -   IDLE:%u\n",total_not_idle,total_idle);
+#endif
+		// So, utilization = total_not_idle - idle / total_not_idle 
+		u[core]= (total_not_idle - total_idle)*100 / total_not_idle ;
+	}
+
+	for(i=0;i<num_core+1;++i){
+		free(cpu_line_prev[i]);
+	}
+	free(cpu_line_prev);
+	for(i=0;i<num_core+1;++i){
+		free(cpu_line[i]);
+	}
+	free(cpu_line);
+	return u;
 }
-
