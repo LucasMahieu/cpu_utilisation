@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 #define MAX_SIZE_LINE 100
-#define SAMPLING_TIME_WAIT 3
+#define SAMPLING_TIME_WAIT 2
 
 typedef struct {
 	char cpu_num[5];
@@ -49,6 +49,7 @@ int get_cpu_utilization(int num){
 			return -1;
 		}
 	}
+	fclose(f);
 	// Parse the ligne to fill the structure of time
 	time_prev = get_cpu_time(cpu_line);
 	// Compute the idle and NotIdle time
@@ -67,6 +68,7 @@ int get_cpu_utilization(int num){
 			return -1;
 		}
 	}
+	fclose(f);
 	// Parse the ligne to fill the structure of time
 	time = get_cpu_time(cpu_line);
 	// Compute the idle and NotIdle time
@@ -89,9 +91,11 @@ int main(void){
 	int u = 0;
 	int i=0;
 	int core_num = sysconf(_SC_NPROCESSORS_ONLN);
-	for(i=-1;i<core_num;++i){
+	u = get_cpu_utilization(0);
+	printf("utilization of cpuTOTAL=%d%\n",u);
+	for(i=1;i<core_num+1;++i){
 		u = get_cpu_utilization(i);
-		printf("utilization of cpu%d=%d%\n",i,u);
+		printf("utilization of cpu%d=%d%\n",i-1,u);
 	}
 	return 0;
 }
