@@ -92,10 +92,10 @@ int main(void){
 	int i=0;
 	int core_num = sysconf(_SC_NPROCESSORS_ONLN);
 	u = get_cpu_utilization(0);
-	printf("utilization of cpuTOTAL=%d%\n",u);
+	printf("utilization of cpuTOTAL=%d%%\n",u);
 	for(i=1;i<core_num+1;++i){
 		u = get_cpu_utilization(i);
-		printf("utilization of cpu%d=%d%\n",i-1,u);
+		printf("utilization of cpu%d=%d%%\n",i-1,u);
 	}
 	return 0;
 }
