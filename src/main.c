@@ -7,7 +7,7 @@
 #define SAMPLING_TIME_WAIT 2
 
 typedef struct {
-	char cpu_num[5];
+	char* cpu_num;
 	uint32_t user_time;
 	uint32_t nice_time;
 	uint32_t system_time;
@@ -25,7 +25,7 @@ cpu_time get_cpu_time(char* line){
 	
 	if(line == NULL) return ret;
 	
-	sscanf(line,"%s %d %d %d %d %d %d %d %d %d %d",&ret.cpu_num, &ret.user_time,&ret.nice_time,&ret.system_time,&ret.idle_time,&ret.iowait_time,&ret.irq_time,&ret.softirq_time,&ret.steal_time,&ret.guest_time,&ret.guestnice_time);
+	sscanf(line,"%s %d %d %d %d %d %d %d %d %d %d",ret.cpu_num, &ret.user_time,&ret.nice_time,&ret.system_time,&ret.idle_time,&ret.iowait_time,&ret.irq_time,&ret.softirq_time,&ret.steal_time,&ret.guest_time,&ret.guestnice_time);
 	return ret;
 }
 
